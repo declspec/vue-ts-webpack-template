@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h4>{{ greeting }}, {{ _greetingService }}</h4>
+        <h4>{{ greeting }}</h4>
         <router-link to="/test">Go to test page</router-link>
     </div>
 </template>
@@ -9,21 +9,19 @@
     import Vue from 'vue';
     import component from 'vue-class-component';
     import { inject } from 'vue-inversify';
-    import { IGreetingService } from '../index';
+    import { IHttp } from '../services/http';
 
     @component
     export default class HomeView extends Vue {
-        @inject('IGreetingService')
-        private _greetingService: IGreetingService | string;
+        @inject('IHttp')
+        private _http: IHttp;
 
         greeting: string = 'Temp';
 
         mounted() {
-            this.greeting = typeof(this._greetingService) === 'string' ? this._greetingService : this._greetingService.getGreeting();
-
-            setTimeout(() => {
-                this._greetingService = 'bar';
-            }, 1000);
+            this._http.get('https://jsonplaceholder.typicode.com/todos/1').then(res => {
+                this.greeting = res.body.title;
+            });
         }
     }
 </script>

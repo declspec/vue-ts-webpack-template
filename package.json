@@ -16,14 +16,11 @@
     "typescript": "^3.2.2",
     "vue": "^2.5.21",
     "vue-class-component": "^6.3.2",
+    "vue-inversify": "https://github.com/declspec/vue-inversify.git",
     "vue-loader": "^15.5.0",
     "vue-router": "^3.0.2",
     "vue-template-compiler": "^2.5.21",
     "webpack": "^4.28.3",
-    "webpack-cli": "^3.2.1",
-    "vue-inversify": "https://github.com/declspec/vue-inversify.git"
-  },
-  "devDependencies": {
-    "@types/vue": "^2.0.0"
+    "webpack-cli": "^3.2.1"
   }
 }

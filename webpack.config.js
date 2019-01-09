@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 
 module.exports = {
-    mode: 'production',
+    mode: 'development',
     devtool: 'source-map',
     entry: {
         'app': './src/index.ts'
@@ -20,7 +20,8 @@ module.exports = {
                 use: {
                     loader: 'ts-loader',
                     options: {
-                        appendTsSuffixTo: [ /\.vue$/ ]
+                        appendTsSuffixTo: [ /\.vue$/ ],
+                        allowTsInNodeModules: true
                     }
                 }
             }
