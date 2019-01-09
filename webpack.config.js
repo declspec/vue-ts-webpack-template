@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 
 module.exports = {
-    mode: 'development',
+    mode: 'production',
     devtool: 'source-map',
     entry: {
         'app': './src/index.ts'
@@ -17,7 +17,6 @@ module.exports = {
             },
             {
                 test: /\.tsx?$/,
-                exclude: /[\/\\]node_modules[\/\\]/,
                 use: {
                     loader: 'ts-loader',
                     options: {
@@ -28,7 +27,7 @@ module.exports = {
         ]
     },
     resolve: {
-        extensions: [ '.tsx', '.ts', '.vue' ],
+        extensions: [ '.js', '.tsx', '.ts', '.vue' ],
         modules: [ path.resolve('./src'), 'node_modules' ]
     },
     output: {

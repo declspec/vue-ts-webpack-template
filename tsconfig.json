@@ -6,6 +6,10 @@
         "noImplicitThis": true,
         "noImplicitAny": true,
         "module": "es2015",
+        "lib": ["es6","dom"],
+        "types": ["reflect-metadata"],
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
         "moduleResolution": "node"
     }
 }
