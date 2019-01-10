@@ -81,26 +81,19 @@ export class Http implements IHttp {
         return this.$pipeline(req);
     }
 
-    $send(req: HttpRequest) : Promise<HttpResponse> {
-        return fetch(req.url, req).then(res => {
-            const headers: { [key: string]: string } = {};
+    async $send(req: HttpRequest) : Promise<HttpResponse> {
+        const res = await fetch(req.url, req);
+        const headers: { [key: string]: string; } = {};
+        const contentType = res.headers.get('Content-Type');
 
-            res.headers.forEach((value, name) => headers[name] = value);
+        res.headers.forEach((value, name) => headers[name] = value);
 
-            const response: HttpResponse = {
-                status: res.status,
-                headers: headers,
-                url: res.url
-            };
-
-            const contentType = res.headers.get('Content-Type');
-            const readBody: Promise<any> = (typeof(contentType) === 'string' && contentType.indexOf('json') >= 0 ? res.json() : res.text());
-
-            return readBody.then(body => {
-                response.body = body;
-                return response;
-            })
-        })
+        return {
+            status: res.status,
+            headers: headers,
+            url: res.url,
+            body: await (typeof (contentType) === 'string' && contentType.indexOf('json') >= 0 ? res.json() : res.text())
+        };
     }
 }
 

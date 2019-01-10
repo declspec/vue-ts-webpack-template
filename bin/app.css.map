@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack:///./src/components/todo-list.vue?b9b8"],"names":[],"mappings":"AAAA;AACA;AACA","file":"app.css","sourcesContent":["ul li:nth-child(even) a[data-v-f927f936] {\n  color: red;\n}\n"],"sourceRoot":""}
