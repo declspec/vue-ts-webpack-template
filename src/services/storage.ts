@@ -18,7 +18,7 @@ export class StorageService {
         return this;
     }
 
-    get<T=any>(key: string, defaultValue?: T) {
+    get<T=any>(key: string, defaultValue?: T | null) {
         return this.has(key) ? this.state[key] as T : defaultValue;
     }
 

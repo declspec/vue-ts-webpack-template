@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h2>Todos ({{ todos. }})</h2>
+        <h2>Todos ({{ todos.length }})</h2>
         <ul>
             <li v-for="todo in todos" :key="todo.id">
                 <nav-link :url="`https://jsonplaceholder.typicode.com/comments/${todo.id}`">{{ todo.name }}</nav-link>
