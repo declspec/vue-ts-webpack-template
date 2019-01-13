@@ -1,5 +1,3 @@
-import { injectable } from 'inversify';
-
 export type HttpRequest = {
     method: string
     url: string
@@ -14,29 +12,30 @@ export type HttpResponse = {
     readonly body: string
 };
 
+export type HttpContent = {
+    contentType: string
+    body: string
+};
+
 export type HttpQueryParams = {
     [key: string]: any
-}
-
-export type HttpBodyAppender = (req: HttpRequest, data?: any) => void;
+};
 
 export type HttpHandler = (req: HttpRequest) => Promise<HttpResponse>
 export type HttpMiddleware = (req: HttpRequest, next: HttpHandler) => Promise<HttpResponse>;
 
-export const JsonBodyAppender: HttpBodyAppender = (req, data) => {
-    const headers = req.headers || (req.headers = {});
-    headers['Content-Type'] = 'application/json; charset=utf-8';
-    
-    if (typeof(data) !== 'undefined')
-        req.body = JSON.stringify(data);
-};
+export const jsonContent = (data: any): HttpContent => {
+    return {
+        contentType: 'application/json; charset=utf-8',
+        body: JSON.stringify(data)
+    };
+}
 
-export const FormDataBodyAppender: HttpBodyAppender = (req, data) => {
-    const headers = req.headers || (req.headers = {});
-    headers['Content-Type'] = 'application/json; charset=utf-8';
-
-    if (typeof(data) !== 'undefined')
-        req.body = createQueryString(data);
+export const formDataContent = (data: any): HttpContent => {
+    return {
+        contentType: 'application/x-www-form-urlencoded',
+        body: createQueryString(data)
+    };
 };
 
 export interface IHttpClient {
@@ -44,12 +43,11 @@ export interface IHttpClient {
     send(req: HttpRequest) : Promise<HttpResponse>;
     get(url: string, params?: HttpQueryParams) : Promise<HttpResponse>;
     delete(url: string, params?: HttpQueryParams) : Promise<HttpResponse>;
-    post(url: string, data?: any, params?: HttpQueryParams) : Promise<HttpResponse>
-    patch(url: string, data?: any, params?: HttpQueryParams) : Promise<HttpResponse>
-    put(url: string, data?: any, params?: HttpQueryParams) : Promise<HttpResponse>
+    post(url: string, content?: HttpContent, params?: HttpQueryParams) : Promise<HttpResponse>
+    patch(url: string, content?: HttpContent, params?: HttpQueryParams) : Promise<HttpResponse>
+    put(url: string, content?: HttpContent, params?: HttpQueryParams) : Promise<HttpResponse>
 }
 
-@injectable()
 export class HttpClient implements IHttpClient {
     private $middleware: HttpMiddleware[] = [];
     private $pipeline: HttpHandler = req => this.$send(req);
@@ -78,32 +76,23 @@ export class HttpClient implements IHttpClient {
         return this.$pipeline(createRequest('GET', url, params));
     }  
 
-    post(url: string, data?: any, params?: HttpQueryParams) {
-        const req = { method: 'POST', url: appendParams(url, params), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) };
-        return this.$pipeline(req);
+    post(url: string, content?: HttpContent, params?: HttpQueryParams) {
+        return this.$pipeline(createRequest('POST', url, params, content));
     }
 
     delete(url: string, params?: HttpQueryParams) {
-        const req: HttpRequest = { method: 'DELETE', url: appendParams(url, params), headers: {} };
-        return this.$pipeline(req);
+        return this.$pipeline(createRequest('DELETE', url, params));
     }  
 
-    patch(url: string, data?: any, params?: HttpQueryParams) {
-        const req = { 
-            method: 'PATCH', 
-            url: appendParams(url, params), 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: typeof(data) !== JSON.stringify(data) 
-        };
-        return this.$pipeline(req);
+    patch(url: string, content?: HttpContent, params?: HttpQueryParams) {
+        return this.$pipeline(createRequest('PATCH', url, params, content));
     }
 
-    put(url: string, data?: any, params?: HttpQueryParams) {
-        const req = { method: 'PUT', url: appendParams(url, params), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) };
-        return this.$pipeline(req);
+    put(url: string, content?: HttpContent, params?: HttpQueryParams) {
+        return this.$pipeline(createRequest('PUT', url, params, content));
     }
 
-    async $send(req: HttpRequest) : Promise<HttpResponse> {
+    private async $send(req: HttpRequest) : Promise<HttpResponse> {
         const res = await fetch(req.url, req);
         const headers: { [key: string]: string; } = {};
 
@@ -118,25 +107,16 @@ export class HttpClient implements IHttpClient {
     }
 }
 
-function createRequest(method: string, url: string, params?: HttpQueryParams) : HttpRequest {
+function createRequest(method: string, url: string, params?: HttpQueryParams, content?: HttpContent) : HttpRequest {
     if (typeof(params) !== 'undefined')
         url += (url.indexOf('?') >= 0 ? '&' : '?') + createQueryString(params);
 
     return {
         method,
         url,
-        headers: {}
+        headers: content ? { 'Content-Type': content.contentType } : undefined,
+        body: content ? content.body : undefined
     };
-}
-
-function createBodyRequest(method: string, url: string, params?: HttpQueryParams, body?: any) : HttpRequest {
-    const req = createRequest(method, url, params)
-}
-
-function appendParams(url: string, params?: HttpQueryParams) {
-    if (typeof(params) !== 'undefined')
-        url += (url.indexOf('?') >= 0 ? '&' : '?') + createQueryString(params)
-    return url;
 }
 
 function createQueryString(params: HttpQueryParams) {
