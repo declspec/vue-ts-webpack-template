@@ -1,3 +1,5 @@
+import { injectable } from 'inversify';
+
 import { 
     jsonContent, 
     IHttpClient, 
@@ -19,6 +21,7 @@ export interface IRestClient {
     put<T = any>(url: string, data?: any, params?: HttpQueryParams) : Promise<RestResponse<T>>
 }
 
+@injectable()
 export class RestClient implements IRestClient {
     private readonly httpClient: IHttpClient;
 

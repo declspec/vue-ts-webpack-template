@@ -1238,8 +1238,6 @@ var MetadataReader = (function () {
     }
     MetadataReader.prototype.getConstructorMetadata = function (constructorFunc) {
         var compilerGeneratedMetadata = Reflect.getMetadata(METADATA_KEY.PARAM_TYPES, constructorFunc);
-        console.log(compilerGeneratedMetadata, Reflect.getMetadata(METADATA_KEY.DESIGN_PARAM_TYPES, constructorFunc));
-
         var userGeneratedMetadata = Reflect.getMetadata(METADATA_KEY.TAGGED, constructorFunc);
         return {
             compilerGeneratedMetadata: compilerGeneratedMetadata,
@@ -1511,16 +1509,14 @@ exports.getDependencies = getDependencies;
 function getTargets(metadataReader, constructorName, func, isBaseClass) {
     var metadata = metadataReader.getConstructorMetadata(func);
     var serviceIdentifiers = metadata.compilerGeneratedMetadata;
+    if (serviceIdentifiers === undefined) {
+        var msg = ERROR_MSGS.MISSING_INJECTABLE_ANNOTATION + " " + constructorName + ".";
+        throw new Error(msg);
+    }
     var constructorArgsMetadata = metadata.userGeneratedMetadata;
     var keys = Object.keys(constructorArgsMetadata);
     var hasUserDeclaredUnknownInjections = (func.length === 0 && keys.length > 0);
     var iterations = (hasUserDeclaredUnknownInjections) ? keys.length : func.length;
-
-    if (iterations > 0 && serviceIdentifiers === undefined) {
-        var msg = ERROR_MSGS.MISSING_INJECTABLE_ANNOTATION + " " + constructorName + ".";
-        throw new Error(msg);
-    }
-
     var constructorTargets = getConstructorArgsAsTargets(isBaseClass, constructorName, serviceIdentifiers, constructorArgsMetadata, iterations);
     var propertyTargets = getClassPropsAsTargets(metadataReader, func);
     var targets = constructorTargets.concat(propertyTargets);
@@ -3123,7 +3119,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_todo_list_vue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../components/todo-list.vue */ "./src/components/todo-list.vue");
 /* harmony import */ var vue_inversify__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! vue-inversify */ "./node_modules/vue-inversify/bin/vue-inversify.js");
 /* harmony import */ var vue_inversify__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(vue_inversify__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _services_http__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../services/http */ "./src/services/http.ts");
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -3150,7 +3145,6 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 
 
 
-
 var HomeView = /** @class */ (function (_super) {
     __extends(HomeView, _super);
     function HomeView() {
@@ -3164,13 +3158,12 @@ var HomeView = /** @class */ (function (_super) {
     HomeView.prototype.mounted = function () {
         var _this = this;
         this._http.get('https://jsonplaceholder.typicode.com/comments').then(function (res) {
-            _this.todos = res.body;
+            _this.todos = JSON.parse(res.body);
         });
     };
-    var _a;
     __decorate([
-        Object(vue_inversify__WEBPACK_IMPORTED_MODULE_3__["inject"])('IHttp'),
-        __metadata("design:type", typeof (_a = typeof _services_http__WEBPACK_IMPORTED_MODULE_4__["IHttp"] !== "undefined" && _services_http__WEBPACK_IMPORTED_MODULE_4__["IHttp"]) === "function" ? _a : Object)
+        Object(vue_inversify__WEBPACK_IMPORTED_MODULE_3__["inject"])('IHttpClient'),
+        __metadata("design:type", Object)
     ], HomeView.prototype, "_http", void 0);
     HomeView = __decorate([
         vue_class_component__WEBPACK_IMPORTED_MODULE_1___default()({
@@ -14756,14 +14749,17 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var inversify__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! inversify */ "./node_modules/inversify/lib/inversify.js");
 /* harmony import */ var inversify__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(inversify__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _services_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/http */ "./src/services/http.ts");
-/* harmony import */ var _services_storage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/storage */ "./src/services/storage.ts");
+/* harmony import */ var _services_http_client__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/http-client */ "./src/services/http-client.ts");
+/* harmony import */ var _services_rest_client__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/rest-client */ "./src/services/rest-client.ts");
+/* harmony import */ var _services_storage__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../services/storage */ "./src/services/storage.ts");
+
 
 
 
 var container = new inversify__WEBPACK_IMPORTED_MODULE_0__["Container"]();
-container.bind('IHttp').to(_services_http__WEBPACK_IMPORTED_MODULE_1__["Http"]);
-container.bind('StorageService').toConstantValue(new _services_storage__WEBPACK_IMPORTED_MODULE_2__["StorageService"](window.localStorage));
+container.bind('IHttpClient').to(_services_http_client__WEBPACK_IMPORTED_MODULE_1__["HttpClient"]);
+container.bind('IRestClient').to(_services_rest_client__WEBPACK_IMPORTED_MODULE_2__["RestClient"]);
+container.bind('StorageService').toConstantValue(new _services_storage__WEBPACK_IMPORTED_MODULE_3__["StorageService"](window.localStorage));
 /* harmony default export */ __webpack_exports__["default"] = (container);
 
 
@@ -14916,17 +14912,17 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./src/services/http.ts":
-/*!******************************!*\
-  !*** ./src/services/http.ts ***!
-  \******************************/
-/*! exports provided: JsonBodyAppender, FormDataBodyAppender, HttpClient */
+/***/ "./src/services/http-client.ts":
+/*!*************************************!*\
+  !*** ./src/services/http-client.ts ***!
+  \*************************************/
+/*! exports provided: jsonContent, formDataContent, HttpClient */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "JsonBodyAppender", function() { return JsonBodyAppender; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FormDataBodyAppender", function() { return FormDataBodyAppender; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "jsonContent", function() { return jsonContent; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "formDataContent", function() { return formDataContent; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClient", function() { return HttpClient; });
 /* harmony import */ var inversify__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! inversify */ "./node_modules/inversify/lib/inversify.js");
 /* harmony import */ var inversify__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(inversify__WEBPACK_IMPORTED_MODULE_0__);
@@ -14972,17 +14968,17 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
     }
 };
 
-var JsonBodyAppender = function (req, data) {
-    var headers = req.headers || (req.headers = {});
-    headers['Content-Type'] = 'application/json; charset=utf-8';
-    if (typeof (data) !== 'undefined')
-        req.body = JSON.stringify(data);
+var jsonContent = function (data) {
+    return {
+        contentType: 'application/json; charset=utf-8',
+        body: JSON.stringify(data)
+    };
 };
-var FormDataBodyAppender = function (req, data) {
-    var headers = req.headers || (req.headers = {});
-    headers['Content-Type'] = 'application/json; charset=utf-8';
-    if (typeof (data) !== 'undefined')
-        req.body = createQueryString(data);
+var formDataContent = function (data) {
+    return {
+        contentType: 'application/x-www-form-urlencoded',
+        body: createQueryString(data)
+    };
 };
 var HttpClient = /** @class */ (function () {
     function HttpClient() {
@@ -15013,26 +15009,17 @@ var HttpClient = /** @class */ (function () {
     HttpClient.prototype.get = function (url, params) {
         return this.$pipeline(createRequest('GET', url, params));
     };
-    HttpClient.prototype.post = function (url, data, params) {
-        var req = { method: 'POST', url: appendParams(url, params), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) };
-        return this.$pipeline(req);
+    HttpClient.prototype.post = function (url, content, params) {
+        return this.$pipeline(createRequest('POST', url, params, content));
     };
     HttpClient.prototype.delete = function (url, params) {
-        var req = { method: 'DELETE', url: appendParams(url, params), headers: {} };
-        return this.$pipeline(req);
+        return this.$pipeline(createRequest('DELETE', url, params));
     };
-    HttpClient.prototype.patch = function (url, data, params) {
-        var req = {
-            method: 'PATCH',
-            url: appendParams(url, params),
-            headers: { 'Content-Type': 'application/json' },
-            body: typeof (data) !== JSON.stringify(data)
-        };
-        return this.$pipeline(req);
+    HttpClient.prototype.patch = function (url, content, params) {
+        return this.$pipeline(createRequest('PATCH', url, params, content));
     };
-    HttpClient.prototype.put = function (url, data, params) {
-        var req = { method: 'PUT', url: appendParams(url, params), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) };
-        return this.$pipeline(req);
+    HttpClient.prototype.put = function (url, content, params) {
+        return this.$pipeline(createRequest('PUT', url, params, content));
     };
     HttpClient.prototype.$send = function (req) {
         return __awaiter(this, void 0, void 0, function () {
@@ -15045,6 +15032,7 @@ var HttpClient = /** @class */ (function () {
                         headers = {};
                         res.headers.forEach(function (value, name) { return headers[name] = value; });
                         _a = {
+                            request: req,
                             status: res.status,
                             headers: headers,
                             url: res.url
@@ -15062,28 +15050,88 @@ var HttpClient = /** @class */ (function () {
     return HttpClient;
 }());
 
-function createRequest(method, url, params) {
+function createRequest(method, url, params, content) {
     if (typeof (params) !== 'undefined')
         url += (url.indexOf('?') >= 0 ? '&' : '?') + createQueryString(params);
     return {
         method: method,
         url: url,
-        headers: {}
+        headers: content ? { 'Content-Type': content.contentType } : undefined,
+        body: content ? content.body : undefined
     };
-}
-function createBodyRequest(method, url, params, body) {
-    var req = createRequest(method, url, params);
-}
-function appendParams(url, params) {
-    if (typeof (params) !== 'undefined')
-        url += (url.indexOf('?') >= 0 ? '&' : '?') + createQueryString(params);
-    return url;
 }
 function createQueryString(params) {
     return Object.keys(params)
         .filter(function (k) { return typeof (params[k]) !== 'undefined'; })
         .map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k].toString()); })
         .join('&');
+}
+
+
+/***/ }),
+
+/***/ "./src/services/rest-client.ts":
+/*!*************************************!*\
+  !*** ./src/services/rest-client.ts ***!
+  \*************************************/
+/*! exports provided: RestClient */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "RestClient", function() { return RestClient; });
+/* harmony import */ var inversify__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! inversify */ "./node_modules/inversify/lib/inversify.js");
+/* harmony import */ var inversify__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(inversify__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _http_client__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./http-client */ "./src/services/http-client.ts");
+var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (undefined && undefined.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+
+
+var RestClient = /** @class */ (function () {
+    function RestClient(httpClient) {
+        this.httpClient = httpClient;
+    }
+    RestClient.prototype.get = function (url, params) {
+        return this.httpClient.get(url, params).then(handleResponse);
+    };
+    RestClient.prototype.delete = function (url, params) {
+        return this.httpClient.delete(url, params).then(handleResponse);
+    };
+    RestClient.prototype.post = function (url, data, params) {
+        return this.httpClient.post(url, Object(_http_client__WEBPACK_IMPORTED_MODULE_1__["jsonContent"])(data), params).then(handleResponse);
+    };
+    RestClient.prototype.patch = function (url, data, params) {
+        return this.httpClient.patch(url, Object(_http_client__WEBPACK_IMPORTED_MODULE_1__["jsonContent"])(data), params).then(handleResponse);
+    };
+    RestClient.prototype.put = function (url, data, params) {
+        return this.httpClient.put(url, Object(_http_client__WEBPACK_IMPORTED_MODULE_1__["jsonContent"])(data), params).then(handleResponse);
+    };
+    RestClient = __decorate([
+        Object(inversify__WEBPACK_IMPORTED_MODULE_0__["injectable"])(),
+        __metadata("design:paramtypes", [Object])
+    ], RestClient);
+    return RestClient;
+}());
+
+function handleResponse(res) {
+    var contentType = res.headers['content-type'];
+    if (typeof (contentType) !== 'string' || contentType.indexOf('application/json') !== 0)
+        throw new Error("Invalid \"Content-Type\" header returned from server; expected \"application/json\", got \"" + (contentType || 'undefined') + "\"");
+    var body = JSON.parse(res.body);
+    if (body.status < 500)
+        return body;
+    // Unhandled structured response from the server
+    var error = new Error(res.request.method + " \"" + res.request.url + "\" " + body.status + " (" + body.errors.join('; ') + ")");
+    error.name = 'RestClientUnhandledResponseError';
+    error.response = body;
+    return Promise.reject(error);
 }
 
 

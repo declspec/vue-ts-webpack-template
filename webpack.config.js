@@ -12,7 +12,6 @@ module.exports = {
     },
     module: {
         rules: [
-             // Css / SASS rules
              { 
                 test: /\.s?css$/,
                 use: [
@@ -21,12 +20,10 @@ module.exports = {
                     'sass-loader'
                 ]
             },
-            // Vue rules
             {
                 test: /\.vue$/,
                 loader: 'vue-loader'
             },
-            // TypeScript rules
             {
                 test: /\.tsx?$/,
                 exclude: /[\/\\]node_modules[\/\\]/,

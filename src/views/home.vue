@@ -19,7 +19,7 @@
     import TodoList from '../components/todo-list.vue';
 
     import { inject } from 'vue-inversify';
-    import { IHttp } from '../services/http';
+    import { IHttpClient } from '../services/http-client';
 
     @component({
         components: {
@@ -27,8 +27,8 @@
         }
     })
     export default class HomeView extends Vue {
-        @inject('IHttp')
-        private _http: IHttp;
+        @inject('IHttpClient')
+        private _http: IHttpClient;
         
         beforeCreate() {
             console.log(this._http);
@@ -38,7 +38,7 @@
 
         mounted() {
             this._http.get('https://jsonplaceholder.typicode.com/comments').then(res => {
-                this.todos = res.body;
+                this.todos = JSON.parse(res.body);
             });
         }
     }

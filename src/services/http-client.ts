@@ -1,3 +1,5 @@
+import { injectable } from 'inversify';
+
 export type HttpRequest = {
     method: string
     url: string
@@ -49,6 +51,7 @@ export interface IHttpClient {
     put(url: string, content?: HttpContent, params?: HttpQueryParams) : Promise<HttpResponse>
 }
 
+@injectable()
 export class HttpClient implements IHttpClient {
     private $middleware: HttpMiddleware[] = [];
     private $pipeline: HttpHandler = req => this.$send(req);
