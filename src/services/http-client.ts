@@ -6,6 +6,7 @@ export type HttpRequest = {
 };
 
 export type HttpResponse = {
+    readonly request: HttpRequest
     readonly status: number
     readonly url: string
     readonly headers: { [key: string]: string }
@@ -99,6 +100,7 @@ export class HttpClient implements IHttpClient {
         res.headers.forEach((value, name) => headers[name] = value);
 
         return {
+            request: req,
             status: res.status,
             headers: headers,
             url: res.url,

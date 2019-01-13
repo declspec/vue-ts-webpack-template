@@ -8,7 +8,7 @@ import {
 export type RestResponse<T = any> = {
     status: number
     data?: T
-    errors: Array<string | Error>
+    errors: Array<string>
 };
 
 export interface IRestClient {
@@ -47,10 +47,20 @@ export class RestClient implements IRestClient {
     }
 }
 
-function handleResponse<T = any>(res: HttpResponse) : RestResponse<T> {
+function handleResponse<T = any>(res: HttpResponse) : RestResponse<T> | Promise<RestResponse<T>> {
     const contentType = res.headers['content-type'];
     if (typeof(contentType) !== 'string' || contentType.indexOf('application/json') !== 0)
         throw new Error(`Invalid "Content-Type" header returned from server; expected "application/json", got "${contentType || 'undefined'}"`);
 
-    return JSON.parse(res.body);
+    const body: RestResponse<T> = JSON.parse(res.body);
+
+    if (body.status < 500)
+        return body;
+
+    // Unhandled structured response from the server
+    const error = new Error(`${res.request.method} "${res.request.url}" ${body.status} (${body.errors.join('; ')})`);
+    error.name = 'RestClientUnhandledResponseError';
+    (<any> error).response = body;
+
+    return Promise.reject(error);
 }

@@ -1,24 +1,46 @@
 import { injectable } from 'inversify';
 import { StorageService } from './storage';
-import { IHttp } from './http';
+import { IRestClient } from './rest-client';
 
 const StorageKey = 'app-user';
 
 @injectable()
 export class SessionService<TUser> {
     private storageService: StorageService;
-    private http: IHttp;
+    private restClient: IRestClient;
 
-    public constructor(http: IHttp, storageService: StorageService) {
-        this.http = http;
+    public constructor(restClient: IRestClient, storageService: StorageService) {
+        this.restClient = restClient;
         this.storageService = storageService;
     }
 
-    current() {
+    current(): TUser | null {
         return this.storageService.get<TUser>(StorageKey) || null;
     }
 
-    fetch() {
-        return this.http.get(`/sess
+    fetch(): Promise<TUser | null> {
+        return this.restClient.get<TUser>(`/sessions`)
+            .then(res => res.data || null);
+    }
+
+    clear() {
+        this.storageService.clear();
+    }
+
+    login(credentials: any): Promise<TUser | null> {
+        return this.restClient.post<TUser>(`/sessions`, credentials).then(res => {
+            if (res.data)
+                this.storageService.set(StorageKey, res.data);
+            return res.data || null;
+        });
+    }
+
+    logout() {
+        return this.restClient.delete(`/sessions`)
+            .then(() => this.clear());
+    }
+
+    refresh(): Promise<TUser | null> {
+        return Promise.resolve(null);
     }
 }
